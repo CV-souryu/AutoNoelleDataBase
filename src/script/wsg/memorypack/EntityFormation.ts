@@ -1,0 +1,83 @@
+import { MemoryPackWriter } from "./MemoryPackWriter.js";
+import { MemoryPackReader } from "./MemoryPackReader.js";
+import { EntityShip } from "./EntityShip.js";
+
+export class EntityFormation {
+    id: number;
+    formation: number;
+    ships: (EntityShip | null)[] | null;
+
+    constructor() {
+        this.id = 0;
+        this.formation = 0;
+        this.ships = null;
+
+    }
+
+    static serialize(value: EntityFormation | null): Uint8Array {
+        const writer = MemoryPackWriter.getSharedInstance();
+        this.serializeCore(writer, value);
+        return writer.toArray();
+    }
+
+    static serializeCore(writer: MemoryPackWriter, value: EntityFormation | null): void {
+        if (value == null) {
+            writer.writeNullObjectHeader();
+            return;
+        }
+
+        writer.writeObjectHeader(3);
+        writer.writeInt32(value.id);
+        writer.writeInt32(value.formation);
+        writer.writeArray(value.ships, (writer, x) => EntityShip.serializeCore(writer, x));
+
+    }
+
+    static serializeArray(value: (EntityFormation | null)[] | null): Uint8Array {
+        const writer = MemoryPackWriter.getSharedInstance();
+        this.serializeArrayCore(writer, value);
+        return writer.toArray();
+    }
+
+    static serializeArrayCore(writer: MemoryPackWriter, value: (EntityFormation | null)[] | null): void {
+        writer.writeArray(value, (writer, x) => EntityFormation.serializeCore(writer, x));
+    }
+
+    static deserialize(buffer: ArrayBuffer): EntityFormation | null {
+        return this.deserializeCore(new MemoryPackReader(buffer));
+    }
+
+    static deserializeCore(reader: MemoryPackReader): EntityFormation | null {
+        const [ok, count] = reader.tryReadObjectHeader();
+        if (!ok) {
+            return null;
+        }
+
+        const value = new EntityFormation();
+        if (count == 3) {
+            value.id = reader.readInt32();
+            value.formation = reader.readInt32();
+            value.ships = reader.readArray(reader => EntityShip.deserializeCore(reader));
+
+        }
+        else if (count > 3) {
+            throw new Error("Current object's property count is larger than type schema, can't deserialize about versioning.");
+        }
+        else {
+            if (count == 0) return value;
+            value.id = reader.readInt32(); if (count == 1) return value;
+            value.formation = reader.readInt32(); if (count == 2) return value;
+            value.ships = reader.readArray(reader => EntityShip.deserializeCore(reader)); if (count == 3) return value;
+
+        }
+        return value;
+    }
+
+    static deserializeArray(buffer: ArrayBuffer): (EntityFormation | null)[] | null {
+        return this.deserializeArrayCore(new MemoryPackReader(buffer));
+    }
+
+    static deserializeArrayCore(reader: MemoryPackReader): (EntityFormation | null)[] | null {
+        return reader.readArray(reader => EntityFormation.deserializeCore(reader));
+    }
+}
