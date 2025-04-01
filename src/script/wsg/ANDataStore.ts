@@ -3,21 +3,25 @@ const staticPath = import.meta.env.PUBLIC_STATIC_ASSETS
 export class ANDataStore {
     static Data: ANData | undefined;
     static MapNodeTitle: Map<number, string> = new Map<number, string>()
-    static async Reload(focue: boolean = false) {
-        if (focue || !ANDataStore.Data) {
+    static DownLoadPromise:Promise<ANData|undefined>|undefined;
+    static async Reload() {
+        if (!ANDataStore.Data) {
+            if(!!ANDataStore.DownLoadPromise){
+                return await ANDataStore.DownLoadPromise
+            }
             ANDataStore.Data = undefined;
-            return await fetch(staticPath+"/static/ANData.Web.MemoryPack.bin")
+            ANDataStore.DownLoadPromise=  fetch(staticPath+"/static/ANData.Web.MemoryPack.bin")
                 .then((res) => res.arrayBuffer())
                 .then((buffer) => ANData.deserialize(buffer))
                 .then(data => {
                     if (!!data) {
                         ANDataStore.Data = data
                         ANDataStore.Include()
-                        return data
-                    } else {
-                        return undefined;
                     }
+                    ANDataStore.DownLoadPromise = undefined;
+                    return data||undefined
                 })
+            return await ANDataStore.DownLoadPromise;
         }
         return ANDataStore.Data
     }

@@ -21,7 +21,9 @@ import { RouteTypeOption, ShipTypeOption } from '@script/wsg/Options';
 import { FormatString as StringFormat } from '@script/String';
 import FlowMapNodeEdgeLable from './flowMapNodeEdgeLable.vue';
 import Multiselect from 'vue-multiselect'
-console.log(import.meta.env);
+import { Select } from "@opentiny/vue"
+
+// console.log(import.meta.env);
 // import { Container,Select} from "@opentiny/vue"
 const FlowNodes = shallowRef<FlowNode<EntityMapNode>[]>([]);
 const FlowEdges = shallowRef<FlowEdge[]>([]);
@@ -29,8 +31,9 @@ const MapOptions = shallowRef<EntityMap[]>([])
 const SelectMap = shallowRef<EntityMap>()
 const SelectMapNodePass = ref<number[]>([])
 const SelectMapNodePassOptions = shallowRef<number[]>([])
-const FormatNodeRoute = (route: EntityMapNodeRouter, weight: number) => {
+const FormatNodeRoute = (route: EntityMapNodeRouter, weight: number,index:number) => {
   const result: string[] = []
+
   if (route.passCount != 0) {
     if (route.conditions) {
       const conditions = route.conditions.filter((element): element is Exclude<typeof element, null | undefined> => !!element).map(FormatNodeRouteInfo).join(";")
@@ -77,10 +80,13 @@ const SetMapNode = (map: EntityMap) => {
   FlowNodes.value = nodes;
 
 }
-const CheckRouteActive=(route:EntityMapNodeRouter,pass:number[])=>{
- const miss= route.missBy&&route.missBy.size!=0&&route.missBy.values().toArray().filter(item => pass.indexOf(item) == -1).length == 0
- const show= route.showBy&&route.showBy.size!=0&&route.showBy.values().toArray().filter(item => pass.indexOf(item) == -1).length == 0
- return !miss&&show
+const CheckRouteActive = (route: EntityMapNodeRouter, pass: number[]) => {
+  if (route.missBy && route.missBy.size == 0 && route.showBy && route.showBy.size == 0) return true
+  const miss = route.missBy && route.missBy.size != 0 && route.missBy.values().toArray().filter(item => pass.indexOf(item) == -1).length == 0
+  const show = route.showBy && route.showBy.size != 0 && route.showBy.values().toArray().filter(item => pass.indexOf(item) == -1).length == 0
+  console.log(route, miss, show);
+
+  return !miss && show
 }
 const SetMapRoute = (map: EntityMap) => {
   const mapNodes = map.nodes?.filter((element): element is Exclude<typeof element, null | undefined> => !!element);
@@ -90,17 +96,17 @@ const SetMapRoute = (map: EntityMap) => {
   mapNodes.forEach(node => {
     if (!node.nodeRouter) return;
 
-    const sum = node.nodeRouter.filter(route=>route&&CheckRouteActive(route,SelectMapNodePass.value)).reduce((value, current) => ((current?.weight || 0) + value), 0)
-    node.nodeRouter.forEach(route => {
+    const sum = node.nodeRouter.filter(route => route && CheckRouteActive(route, SelectMapNodePass.value)).reduce((value, current) => ((current?.weight || 0) + value), 0)
+    node.nodeRouter.forEach((route,index) => {
       if (!route) return;
-      let label = FormatNodeRoute(route, sum)
+      let label = FormatNodeRoute(route, sum,index)
       // let active = true
       let color = "#FFFFFF"
       let opacity = 1
 
       if (route.missBy && route.missBy.size != 0) {
         const miss = route.missBy.values().toArray().filter(item => SelectMapNodePass.value.indexOf(item) == -1).length == 0
-        color = "#FF0000"
+        color = "#F66"
         if (miss) {
           opacity = 0.2
           label = FormatNodeRoute(route, -1)
@@ -113,7 +119,7 @@ const SetMapRoute = (map: EntityMap) => {
       }
       if (route.showBy && route.showBy.size != 0) {
         const show = route.showBy.values().toArray().filter(item => SelectMapNodePass.value.indexOf(item) == -1).length == 0
-        color = "#00FF00"
+        color = "#6F6"
         if (!show) {
           opacity = 0.2
           label = FormatNodeRoute(route, -1)
@@ -137,6 +143,7 @@ const SetMapRoute = (map: EntityMap) => {
         style: {
           opacity: opacity,
           stroke: color,
+          strokeDasharray: "4,1"
 
         },
         labelBgStyle: {

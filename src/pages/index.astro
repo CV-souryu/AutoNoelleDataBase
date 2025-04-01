@@ -1,4 +1,5 @@
 ---
+import ShipSelect from '@components/wsg/ships/shipSelect.vue';
 import Layout from '../layouts/Layout.astro';
 import Maps from '@components/wsg/maps/index.vue'
 
@@ -8,4 +9,5 @@ import Maps from '@components/wsg/maps/index.vue'
 
 <Layout >
 	<Maps client:only="vue"> </Maps>
+	 <!-- <ShipSelect client:only="vue"></ShipSelect> -->
 </Layout>
