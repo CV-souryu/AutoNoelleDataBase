@@ -21,8 +21,10 @@ import { RouteTypeOption, ShipTypeOption } from '@script/wsg/Options';
 import { FormatString as StringFormat } from '@script/String';
 import FlowMapNodeEdgeLable from './flowMapNodeEdgeLable.vue';
 import Multiselect from 'vue-multiselect'
-import { Select } from "@opentiny/vue"
-
+import { Select,Button } from "@opentiny/vue"
+import ShipSelect from "../ships/shipSelect.vue";
+import type { number } from "astro:schema";
+import { CheckMap } from "@script/wsg/CheckShipsRoute";
 // console.log(import.meta.env);
 // import { Container,Select} from "@opentiny/vue"
 const FlowNodes = shallowRef<FlowNode<EntityMapNode>[]>([]);
@@ -31,7 +33,9 @@ const MapOptions = shallowRef<EntityMap[]>([])
 const SelectMap = shallowRef<EntityMap>()
 const SelectMapNodePass = ref<number[]>([])
 const SelectMapNodePassOptions = shallowRef<number[]>([])
-const FormatNodeRoute = (route: EntityMapNodeRouter, weight: number,index:number) => {
+const MapNodeActive=shallowRef<number[]>([])
+const team = shallowRef()
+const FormatNodeRoute = (route: EntityMapNodeRouter, weight: number, index: number) => {
   const result: string[] = []
 
   if (route.passCount != 0) {
@@ -70,21 +74,42 @@ const SetMapNode = (map: EntityMap) => {
   const mapNodes = map.nodes?.filter((element): element is Exclude<typeof element, null | undefined> => !!element);
   if (!mapNodes) return;
   const nodes = mapNodes.map<FlowNode<EntityMapNode>>((node) => {
+    let opacity=1;
+    if(MapNodeActive.value.length!=0){
+      if(MapNodeActive.value.indexOf(node.id)==-1){
+        opacity=0.2
+      }
+    }
     return {
       id: node.id.toString() || "UNKNOW",
       type: "map-node",
       position: { x: (node.postion?.x || 0), y: (node.postion?.y || 0) },
       data: node,
+      style:{
+        opacity:opacity
+      }
     };
   });
   FlowNodes.value = nodes;
 
 }
+const SetMapRouteCondition=(map: EntityMap)=>{
+
+  if(team.value?.ships&&ANDataStore.Data&&ANDataStore.Data.ships){    
+    const ships= team.value.ships.map((item:number|undefined)=>ANDataStore.Data?.ships?.get(item||-1))
+    .filter((element): element is Exclude<typeof element, null | undefined> => !!element)
+    const activeNodes=  CheckMap(ships,{ flagShipLevel:110, levelCount:660,luckUpper:[],speedUpper:[],radarUpper:[],nodePass:SelectMapNodePass.value},map)
+    console.log(activeNodes);
+    MapNodeActive.value=activeNodes
+  }else{
+    MapNodeActive.value=[]
+  }
+}
 const CheckRouteActive = (route: EntityMapNodeRouter, pass: number[]) => {
   if (route.missBy && route.missBy.size == 0 && route.showBy && route.showBy.size == 0) return true
   const miss = route.missBy && route.missBy.size != 0 && route.missBy.values().toArray().filter(item => pass.indexOf(item) == -1).length == 0
   const show = route.showBy && route.showBy.size != 0 && route.showBy.values().toArray().filter(item => pass.indexOf(item) == -1).length == 0
-  console.log(route, miss, show);
+  // console.log(route, miss, show);
 
   return !miss && show
 }
@@ -95,38 +120,52 @@ const SetMapRoute = (map: EntityMap) => {
   const routes: FlowEdge[] = []
   mapNodes.forEach(node => {
     if (!node.nodeRouter) return;
+    let opacityNode = 1
 
     const sum = node.nodeRouter.filter(route => route && CheckRouteActive(route, SelectMapNodePass.value)).reduce((value, current) => ((current?.weight || 0) + value), 0)
-    node.nodeRouter.forEach((route,index) => {
-      if (!route) return;
-      let label = FormatNodeRoute(route, sum,index)
-      // let active = true
-      let color = "#FFFFFF"
-      let opacity = 1
 
+    if(MapNodeActive.value.length!=0){
+      if(MapNodeActive.value.indexOf(node.id)==-1){
+        opacityNode=0.2
+      }
+    }
+    node.nodeRouter.forEach((route, index) => {
+      if (!route) return;
+      // let active = true
+      let opacity=opacityNode
+      let label:string[]=[]
+      let color = "#FFFFFF"
+      {
+         label = FormatNodeRoute(route, sum, index)
+
+      }
       if (route.missBy && route.missBy.size != 0) {
         const miss = route.missBy.values().toArray().filter(item => SelectMapNodePass.value.indexOf(item) == -1).length == 0
         color = "#F66"
         if (miss) {
           opacity = 0.2
-          label = FormatNodeRoute(route, -1)
+          label = FormatNodeRoute(route, -1,index)
         }
-        // console.log(miss);
-        // if(miss){
-
-        // }
-        // active = !miss
       }
       if (route.showBy && route.showBy.size != 0) {
         const show = route.showBy.values().toArray().filter(item => SelectMapNodePass.value.indexOf(item) == -1).length == 0
         color = "#6F6"
         if (!show) {
           opacity = 0.2
-          label = FormatNodeRoute(route, -1)
+          label = FormatNodeRoute(route, -1,index)
 
         }
         // active = show
       }
+
+
+    if(MapNodeActive.value.length!=0){
+      
+      if(MapNodeActive.value.indexOf(route.id)==-1){
+        opacity=0.2
+      }
+    }
+
       routes.push({
         id: `${node.id.toString()}-${route.id.toString()}` || "UNKNOW",
         source: node.id.toString() || "UNKNOW",
@@ -148,6 +187,7 @@ const SetMapRoute = (map: EntityMap) => {
         },
         labelBgStyle: {
           fill: "#FFFC",
+          opacity:opacity
           // width:0,
           // height:0
 
@@ -157,7 +197,6 @@ const SetMapRoute = (map: EntityMap) => {
 
     })
   })
-  // console.log(routes);
   FlowEdges.value = routes;
 }
 const SetMapNodePassOptions = (map: EntityMap) => {
@@ -165,7 +204,10 @@ const SetMapNodePassOptions = (map: EntityMap) => {
   SelectMapNodePassOptions.value = targetNode
 }
 const SetMap = (map: EntityMap) => {
+  
   // return;
+  SetMapRouteCondition(map)
+
   SetMapNode(map);
   SetMapRoute(map);
   SetMapNodePassOptions(map);
@@ -191,11 +233,15 @@ watch(SelectMap, () => {
   }
 })
 watch(SelectMapNodePass, () => {
-  if (SelectMapNodePass.value) {
-    if (SelectMap.value) {
-      SetMapRoute(SelectMap.value)
+  if (SelectMap.value) {
+    SetMap(SelectMap.value)
 
-    }
+  }
+})
+watch(team,()=>{
+  if (SelectMap.value) {
+    SetMap(SelectMap.value)
+
   }
 })
 </script>
@@ -206,7 +252,8 @@ watch(SelectMapNodePass, () => {
       </template>
 
 </Container> -->
-  <div style="width: 100vw;height: 100vh;">
+  <div style="width: 100vw;height: 100vh;overflow: hidden;">
+
     <VueFlow style="background-color: rgb(36,54,69);color: white;" :nodes="FlowNodes" :edges="FlowEdges">
       <template #node-map-node="props">
         <FlowMapNode :data="props.data"></FlowMapNode>
@@ -214,11 +261,16 @@ watch(SelectMapNodePass, () => {
 
 
     </VueFlow>
-    <div style="position: absolute;left: 0;top: 0;background: #FF0;">
-      <Multiselect :options="MapOptions" :custom-label="(i: EntityMap) => i.mapName" v-model="SelectMap"></Multiselect>
-      <Multiselect :multiple="true" :custom-label="(i: number) => ANDataStore.MapNodeTitle.get(i) || '?'"
-        v-model="SelectMapNodePass" v-if="!!SelectMapNodePassOptions && SelectMapNodePassOptions.length > 0"
-        :options="SelectMapNodePassOptions"></Multiselect>
+    <div style="position: absolute; left: 0;top: 0;background: #FFF;">
+      <ShipSelect v-model:team="team"></ShipSelect>
+      <div style="display: flex;">
+        <Multiselect :options="MapOptions" :custom-label="(i: EntityMap) => i.mapName" v-model="SelectMap">
+        </Multiselect>
+        <Multiselect :multiple="true" :custom-label="(i: number) => ANDataStore.MapNodeTitle.get(i) || '?'"
+          v-model="SelectMapNodePass" v-if="!!SelectMapNodePassOptions && SelectMapNodePassOptions.length > 0"
+          :options="SelectMapNodePassOptions"></Multiselect>
+      </div>
+     
     </div>
 
   </div>
