@@ -14,40 +14,40 @@ const GetNodeImageList = (node: EntityMapNode) => {
   const result: string[] = [];
   switch (node.nodeType) {
     case NodeType.Reward:
-      result.push(staticPath + "/static/wsg/pve/reward.png");
+      result.push(staticPath + "/image/wsg/pve/reward.png");
       break;
     case NodeType.Loss:
-      result.push(staticPath + "/static/wsg/pve/loss.png");
+      result.push(staticPath + "/image/wsg/pve/loss.png");
       break;
     case NodeType.Boss:
-      result.push(staticPath + "/static/wsg/pve/boss.png");
+      result.push(staticPath + "/image/wsg/pve/boss.png");
       break;
     case NodeType.Null:
-      result.push(staticPath + "/static/wsg/pve/null.png");
+      result.push(staticPath + "/image/wsg/pve/null.png");
       break;
     case NodeType.AirAttack:
-      result.push(staticPath + "/static/wsg/pve/air.png");
+      result.push(staticPath + "/image/wsg/pve/air.png");
       break;
     case NodeType.SpecialPoint:
     case NodeType.SpecialBoss:
-      result.push(staticPath + "/static/wsg/pve/special_boss.png");
+      result.push(staticPath + "/image/wsg/pve/special_boss.png");
       break;
     case NodeType.LittleBoss:
-      result.push(staticPath + "/static/wsg/pve/little_boss.png");
+      result.push(staticPath + "/image/wsg/pve/little_boss.png");
       break;
     case NodeType.PushBuffPoint:
     case NodeType.Figth:
-      result.push(staticPath + "/static/wsg/pve/battle.png");
+      result.push(staticPath + "/image/wsg/pve/battle.png");
       break;
     default:
-      result.push(staticPath + "/static/wsg/pve/unknow.png");
+      result.push(staticPath + "/image/wsg/pve/unknow.png");
       break;
   }
   if (node.nightAtk) {
-    result.push(staticPath + "/static/wsg/pve/night.png");
+    result.push(staticPath + "/image/wsg/pve/night.png");
   }
   if (node.roundabout) {
-    result.push(staticPath + "/static/wsg/pve/round.png");
+    result.push(staticPath + "/image/wsg/pve/round.png");
   }
   // console.log(result);
   return result;

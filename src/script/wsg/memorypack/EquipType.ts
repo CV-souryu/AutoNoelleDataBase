@@ -1,0 +1,23 @@
+export const enum EquipType {
+    All = 0,
+    GunMain = 1,
+    GunShell = 10,
+    GunAntiAir = 11,
+    TorpedoSpecial = 12,
+    Repairer = 13,
+    GunAntiSubmarine = 14,
+    MissileLauncher = 32,
+    MissileLauncherAir = 33,
+    Missile = 34,
+    MissileAir = 35,
+    GunSecondary = 2,
+    Torpedo = 3,
+    AirplaneTorpedo = 4,
+    AirplaneFighter = 5,
+    AirplaneBomber = 6,
+    AirplaneRadar = 7,
+    Radar = 8,
+    SupportPart = 9,
+    MissileCruiser = 41,
+
+}

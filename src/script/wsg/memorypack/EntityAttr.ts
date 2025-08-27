@@ -1,1 +1,1 @@
-export class EntityAttr{};
+export class EntityAttr{}

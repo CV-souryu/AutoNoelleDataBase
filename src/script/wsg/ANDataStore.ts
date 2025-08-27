@@ -10,7 +10,7 @@ export class ANDataStore {
                 return await ANDataStore.DownLoadPromise
             }
             ANDataStore.Data = undefined;
-            ANDataStore.DownLoadPromise=  fetch(staticPath+"/static/ANData.Web.MemoryPack.bin")
+            ANDataStore.DownLoadPromise=  fetch(staticPath+"/config/test/ANData.Web.MemoryPack.bin")
                 .then((res) => res.arrayBuffer())
                 .then((buffer) => ANData.deserialize(buffer))
                 .then(data => {
